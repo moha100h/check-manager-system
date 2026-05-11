@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مدیریت چک 💳</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; }
+
+    body { background: var(--bg); min-height: 100vh; padding: 20px; }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 30px; }
+    header h1 { color: var(--text); font-size: 1.8rem; margin-bottom: 20px; }
+
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: var(--card); padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-card.success { border-right: 4px solid var(--success); }
+    .stat-card.warning { border-right: 4px solid var(--warning); }
+    .stat-card.danger { border-right: 4px solid var(--danger); }
+    .stat-card.primary { border-right: 4px solid var(--primary); }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+    .stat-label { font-size: 0.85rem; color: var(--text-light); margin-top: 5px; }
+
+    .filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filters input, .filters select { padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; outline: none; }
+    .filters input:focus, .filters select:focus { border-color: var(--primary); }
+    .filters input { flex: 1; min-width: 200px; }
+    .btn { padding: 12px 24px; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .checks-grid { display: grid; gap: 15px; }
+    .check-card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: grid; grid-template-columns: auto 1fr auto; gap: 15px; align-items: center; transition: transform 0.2s; }
+    .check-card:hover { transform: translateY(-2px); }
+    .check-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .check-icon.received { background: #dcfce7; }
+    .check-icon.paid { background: #fee2e2; }
+    .check-info h3 { font-size: 1.1rem; color: var(--text); margin-bottom: 5px; }
+    .check-info p { font-size: 0.9rem; color: var(--text-light); }
+    .check-amount { font-size: 1.3rem; font-weight: 700; color: var(--text); text-align: left; }
+    .check-amount small { display: block; font-size: 0.75rem; color: var(--text-light); font-weight: 400; }
+    .check-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-sm { padding: 8px 16px; font-size: 0.85rem; border-radius: 8px; border: none; cursor: pointer; }
+    .btn-success { background: #dcfce7; color: #166534; }
+    .btn-danger { background: #fee2e2; color: #991b1b; }
+    .badge { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
+    .badge.pending { background: #fef3c7; color: #92400e; }
+    .badge.paid { background: #dcfce7; color: #166534; }
+    .badge.cancelled { background: #f1f5f9; color: #475569; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; border-radius: 20px; padding: 30px; width: 100%; max-width: 450px; }
+    .modal h2 { margin-bottom: 20px; color: var(--text); }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text); }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); outline: none; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+    .btn-cancel { background: #f1f5f9; color: var(--text); }
+
+    .empty { text-align: center; padding: 60px 20px; color: var(--text-light); }
+    .empty svg { width: 80px; height: 80px; margin-bottom: 15px; opacity: 0.5; }
+
+    @media (max-width: 600px) {
+      .check-card { grid-template-columns: 1fr; text-align: center; }
+      .check-icon { margin: 0 auto; }
+      .check-amount { text-align: center; }
+      .check-actions { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>💳 مدیریت چک</h1>
+      <div class="stats">
+        <div class="stat-card primary">
+          <div class="stat-value" id="totalPending">0</div>
+          <div class="stat-label">کل در انتظار</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-value" id="totalReceived">0</div>
+          <div class="stat-label">چک دریافتی</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-value" id="totalPaid">0</div>
+          <div class="stat-label">چک پرداختی</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-value" id="todayChecks">0</div>
+          <div class="stat-label">سررسید امروز</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="🔍 جستجو...">
+      <select id="typeFilter">
+        <option value="">همه انواع</option>
+        <option value="دریافتی">دریافتی</option>
+        <option value="پرداختی">پرداختی</option>
+      </select>
+      <select id="statusFilter">
+        <option value="">همه وضعیت‌ها</option>
+        <option value="در انتظار">در انتظار</option>
+        <option value="پرداخت شده">پرداخت شده</option>
+      </select>
+      <button class="btn btn-primary" onclick="openModal()">➕ چک جدید</button>
+    </div>
+
+    <div class="checks-grid" id="checksGrid"></div>
+    <div class="empty" id="emptyState" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <h3>چکی ثبت نشده</h3>
+      <p>اولین چک رو ثبت کن</p>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="checkModal">
+    <div class="modal-content">
+      <h2 id="modalTitle">چک جدید</h2>
+      <form id="checkForm">
+        <input type="hidden" id="checkId">
+        <div class="form-group">
+          <label>نوع چک</label>
+          <select id="checkType" required>
+            <option value="دریافتی">📥 دریافتی</option>
+            <option value="پرداختی">📤 پرداختی</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>مبلغ (تومان)</label>
+          <input type="number" id="checkAmount" required placeholder="مبلغ رو بنویس...">
+        </div>
+        <div class="form-group">
+          <label>نام شخص/شرکت</label>
+          <input type="text" id="checkPerson" required placeholder="به چه کسی؟">
+        </div>
+        <div class="form-group">
+          <label>شماره تماس</label>
+          <input type="tel" id="checkPhone" placeholder="شماره موبایل">
+        </div>
+        <div class="form-group">
+          <label>تاریخ سررسید</label>
+          <input type="date" id="checkDueDate" required>
+        </div>
+        <div class="form-group">
+          <label>توضیحات</label>
+          <textarea id="checkDescription" placeholder="توضیحات اضافی..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" onclick="closeModal()">لغو</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+
+    async function loadChecks() {
+      const search = document.getElementById('searchInput').value;
+      const type = document.getElementById('typeFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      
+      let url = `${API}/checks?`;
+      if (search) url += `search=${search}&`;
+      if (type) url += `type=${type}&`;
+      if (status) url += `status=${status}&`;
+      
+      const res = await fetch(url);
+      const checks = await res.json();
+      renderChecks(checks);
+    }
+
+    function renderChecks(checks) {
+      const grid = document.getElementById('checksGrid');
+      const empty = document.getElementById('emptyState');
+      
+      if (checks.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      
+      empty.style.display = 'none';
+      grid.innerHTML = checks.map(c => `
+        <div class="check-card">
+          <div class="check-icon ${c.type === 'دریافتی' ? 'received' : 'paid'}">
+            ${c.type === 'دریافتی' ? '📥' : '📤'}
+          </div>
+          <div class="check-info">
+            <h3>${c.person}</h3>
+            <p>${c.description || 'بدون توضیحات'} | 📅 ${c.due_date}</p>
+            <span class="badge ${c.status === 'پرداخت شده' ? 'paid' : c.status === 'لغو شده' ? 'cancelled' : 'pending'}">${c.status}</span>
+          </div>
+          <div class="check-amount">
+            ${c.amount.toLocaleString()} <small>تومان</small>
+            <div class="check-actions">
+              ${c.status === 'در انتظار' ? `<button class="btn-sm btn-success" onclick="updateStatus(${c.id}, 'پرداخت شده')">✓ پرداخت</button>` : ''}
+              <button class="btn-sm btn-danger" onclick="deleteCheck(${c.id})">🗑️</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API}/stats`);
+        const stats = await res.json();
+        document.getElementById('totalPending').textContent = (stats.totalPending || 0).toLocaleString();
+        document.getElementById('totalReceived').textContent = (stats.totalReceived || 0).toLocaleString();
+        document.getElementById('totalPaid').textContent = (stats.totalPaid || 0).toLocaleString();
+        document.getElementById('todayChecks').textContent = stats.todayChecks || 0;
+      } catch (e) {
+        console.error('Error loading stats:', e);
+      }
+    }
+
+    function openModal(id = null) {
+      const modal = document.getElementById('checkModal');
+      const form = document.getElementById('checkForm');
+      
+      if (id) {
+        document.getElementById('modalTitle').textContent = 'ویرایش چک';
+        // Load data...
+      } else {
+        document.getElementById('modalTitle').textContent = 'چک جدید';
+        form.reset();
+        document.getElementById('checkId').value = '';
+      }
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('checkModal').classList.remove('active');
+    }
+
+    document.getElementById('checkForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const data = {
+        type: document.getElementById('checkType').value,
+        amount: parseInt(document.getElementById('checkAmount').value),
+        person: document.getElementById('checkPerson').value,
+        phone: document.getElementById('checkPhone').value,
+        due_date: document.getElementById('checkDueDate').value,
+        description: document.getElementById('checkDescription').value
+      };
+      
+      const id = document.getElementById('checkId').value;
+      const method = id ? 'PATCH' : 'POST';
+      const url = id ? `${API}/checks/${id}` : `${API}/checks`;
+      
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      closeModal();
+      loadChecks();
+      loadStats();
+    });
+
+    async function updateStatus(id, status) {
+      await fetch(`${API}/checks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      loadChecks();
+      loadStats();
+    }
+
+    async function deleteCheck(id) {
+      if (confirm('حذف شود؟')) {
+        await fetch(`${API}/checks/${id}`, { method: 'DELETE' });
+        loadChecks();
+        loadStats();
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('input', loadChecks);
+    document.getElementById('typeFilter').addEventListener('change', loadChecks);
+    document.getElementById('statusFilter').addEventListener('change', loadChecks);
+    document.getElementById('checkModal').addEventListener('click', (e) => {
+      if (e.target.id === 'checkModal') closeModal();
+    });
+
+    loadChecks();
+    loadStats();
+  </script>
+</body>
+</html>
